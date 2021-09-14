@@ -29,6 +29,8 @@ class DatadogTracer extends Tracer {
   constructor (config) {
     super()
 
+    debugger
+
     const Exporter = getExporter(config.experimental.exporter)
 
     this._service = config.service

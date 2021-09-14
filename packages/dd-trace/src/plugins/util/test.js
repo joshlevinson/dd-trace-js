@@ -76,7 +76,7 @@ function getTestEnvironmentMetadata (testFramework) {
   const runtimeAndOSMetadata = getRuntimeAndOSMetadata()
 
   return {
-    [TEST_FRAMEWORK]: testFramework,
+    // [TEST_FRAMEWORK]: testFramework,
     ...gitMetadata,
     ...ciMetadata,
     ...runtimeAndOSMetadata
