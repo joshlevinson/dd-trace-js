@@ -2,14 +2,18 @@ const { getTestEnvironmentMetadata } = require('./packages/dd-trace/src/plugins/
 
 const tracer = require('.')
 
-debugger
-
 tracer.init({
   experimental: {
-    exporter: 'agentless'
+    exporter: 'ci'
   }
 })
+
+const exporter = tracer._tracer._exporter
+
 // get git metadata
 const testEnvironmentMetadata = getTestEnvironmentMetadata('jest')
+
+// send first request with test environment metadata
+exporter.request(testEnvironmentMetadata)
 
 module.exports = tracer

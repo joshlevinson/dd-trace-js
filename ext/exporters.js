@@ -2,5 +2,5 @@
 module.exports = {
   LOG: 'log',
   AGENT: 'agent',
-  AGENTLESS: 'agentless'
+  CI: 'ci'
 }
