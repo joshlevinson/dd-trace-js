@@ -2,7 +2,6 @@
 
 const request = require('./request')
 const log = require('../../log')
-const tracerVersion = require('../../../lib/version')
 
 class Writer {
   constructor ({ url }) {
@@ -11,7 +10,7 @@ class Writer {
   }
 
   append (spans) {
-    this._trace.append(spans)
+    this._trace = this._trace.concat(spans)
   }
 
   _sendPayload (data, count, done) {
@@ -37,26 +36,19 @@ class Writer {
   }
 }
 
-function setHeader (headers, key, value) {
-  if (value) {
-    headers[key] = value
-  }
-}
-
 function makeRequest (data, count, url, cb) {
+  const byteLength = data.reduce((acc, trace) => {
+    return acc + Buffer.byteLength(JSON.stringify(trace))
+  }, 0)
   const options = {
-    path: `/traces`, // dummy path
+    path: `/api/v2/spans`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Datadog-Meta-Tracer-Version': tracerVersion,
-      'X-Datadog-Trace-Count': String(count)
+      'Content-Length': byteLength,
+      'DD-API-KEY': process.env.DATADOG_API_KEY
     }
   }
-
-  setHeader(options.headers, 'Datadog-Meta-Lang', 'nodejs')
-  setHeader(options.headers, 'Datadog-Meta-Lang-Version', process.version)
-  setHeader(options.headers, 'Datadog-Meta-Lang-Interpreter', process.jsEngine || 'v8')
 
   options.protocol = url.protocol
   options.hostname = url.hostname

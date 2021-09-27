@@ -24,7 +24,9 @@ function retriableRequest (options, callback, client, data) {
     })
   })
   req.setTimeout(options.timeout, req.abort)
-  data.forEach(buffer => req.write(buffer))
+  data.forEach(trace => {
+    req.write(JSON.stringify(trace))
+  })
   return req
 }
 
@@ -44,7 +46,7 @@ function request (options, callback) {
     if (attemptIndex === NUM_RETRIES) {
       retriedReq.on('error', e => callback(new Error(`Network error trying to reach the agent: ${e.message}`)))
     } else {
-      log.debug(`Retrying request due to connection error: ${error}`)
+      log.error(`Retrying request due to connection error: ${error}`)
       retriedReq.on('error', error => errorHandler(error, attemptIndex + 1))
     }
   }

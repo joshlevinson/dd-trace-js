@@ -8,12 +8,14 @@ tracer.init({
   }
 })
 
-const exporter = tracer._tracer._exporter
+debugger
 
-// get git metadata
-const testEnvironmentMetadata = getTestEnvironmentMetadata('jest')
+// const exporter = tracer._tracer._exporter
 
-// send first request with test environment metadata
-exporter.request(testEnvironmentMetadata)
+// // get git metadata
+// const testEnvironmentMetadata = getTestEnvironmentMetadata('jest')
+
+// // send first request with test environment metadata
+// exporter.request(testEnvironmentMetadata)
 
 module.exports = tracer
