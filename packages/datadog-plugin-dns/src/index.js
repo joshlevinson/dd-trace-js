@@ -1,6 +1,7 @@
 'use strict'
 
 const dc = require('diagnostics_channel')
+const { AsyncResource } = require('async_hooks')
 
 const analyticsSampler = require('../../dd-trace/src/analytics_sampler')
 const tx = require('../../dd-trace/src/plugins/util/tx')
@@ -132,19 +133,6 @@ function wrapArgs (span, args, callback) {
   }
 }
 
-function wrapResolver (config, rrtype, args) {
-  const hostname = args[0]
-  const span = startSpan(config, 'dns.resolve', {
-    'resource.name': `${rrtype} ${hostname}`,
-    'dns.hostname': hostname,
-    'dns.rrtype': rrtype
-  })
-
-  wrapArgs(span, args)
-
-  return span
-}
-
 function patchResolveShorthands (tracer, config, shim, prototype) {
   Object.keys(rrtypes)
     .filter(method => !!prototype[method])
@@ -179,15 +167,13 @@ function dcWrap (config, prefix, fn) {
   const endCh = channel(prefix + ':end')
   const asyncEndCh = channel(prefix + ':async-end')
   const errorCh = channel(prefix + ':error')
-  const ac = require('async_hooks')
-  const { AsyncResource } = ac
 
   return function () {
     const context = {}
+    const cb = AsyncResource.bind(arguments[arguments.length - 1])
 
     startCh.publish({ context, config, args: arguments, thisObj: this })
 
-    const cb = AsyncResource.bind(arguments[arguments.length - 1])
     if (typeof cb === 'function') {
       arguments[arguments.length - 1] = function (error, ...result) {
         if (error) {

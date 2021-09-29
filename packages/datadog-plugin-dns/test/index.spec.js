@@ -3,7 +3,7 @@
 const agent = require('../../dd-trace/test/plugins/agent')
 const { promisify } = require('util')
 
-wrapIt('async_hooks')
+wrapIt('async_resource')
 
 describe('Plugin', () => {
   let dns
