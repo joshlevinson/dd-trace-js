@@ -2,6 +2,7 @@
 
 const request = require('./request')
 const log = require('../../log')
+const uuid = require('crypto-randomuuid')
 
 class Writer {
   constructor ({ url }) {
@@ -28,8 +29,14 @@ class Writer {
   flush (done = () => {}) {
     const count = this._trace.length
 
+    const payload = JSON.stringify({
+      spans: this._trace,
+      env: 'testing-juan'
+    })
+    this._trace = []
+
     if (count > 0) {
-      this._sendPayload(this._trace, count, done)
+      this._sendPayload(payload, count, done)
     } else {
       done()
     }
@@ -37,23 +44,21 @@ class Writer {
 }
 
 function makeRequest (data, count, url, cb) {
-  const byteLength = data.reduce((acc, trace) => {
-    return acc + Buffer.byteLength(JSON.stringify(trace))
-  }, 0)
   const options = {
     path: `/api/v2/spans`,
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': byteLength,
-      'DD-API-KEY': process.env.DATADOG_API_KEY
+      'Content-Type': 'text/plain;charset=UTF-8',
+      'Content-Length': Buffer.byteLength(data),
+      'DD-API-KEY': process.env.DATADOG_API_KEY,
+      'DD-EVP-ORIGIN': 'nodejs-tracer',
+      'DD-REQUEST-ID': uuid()
     }
   }
 
   options.protocol = url.protocol
   options.hostname = url.hostname
   options.port = url.port
-
   request(Object.assign({ data }, options), (err, res, status) => {
     cb(err, res, status)
   })

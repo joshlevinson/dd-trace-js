@@ -5,6 +5,8 @@ const log = require('../../log')
 
 const NUM_RETRIES = 5
 
+// let index = 0
+
 function retriableRequest (options, callback, client, data) {
   const req = client.request(options, res => {
     let data = ''
@@ -24,9 +26,13 @@ function retriableRequest (options, callback, client, data) {
     })
   })
   req.setTimeout(options.timeout, req.abort)
-  data.forEach(trace => {
-    req.write(JSON.stringify(trace))
-  })
+
+  // debugger
+  // const fs = require('fs')
+  // fs.writeFileSync(`report-${index}.json`, data, 'utf8')
+  // index++
+
+  req.write(data)
   return req
 }
 
@@ -37,7 +43,7 @@ function request (options, callback) {
     timeout: 2000
   }, options)
 
-  const data = [].concat(options.data)
+  const data = options.data
 
   const request = retriableRequest(options, callback, https, data)
 
@@ -51,7 +57,7 @@ function request (options, callback) {
     }
   }
 
-  request.on('error', errorHandler)
+  request.on('error', (error) => errorHandler(error, 1))
   request.end()
 
   return request
