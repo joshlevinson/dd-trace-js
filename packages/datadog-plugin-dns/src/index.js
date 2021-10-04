@@ -20,7 +20,7 @@ const rrtypes = {
   resolveSoa: 'SOA'
 }
 
-function createWrapLookup (tracer, config) {
+function createWrapLookup (config) {
   return function wrapLookup (lookup) {
     return dcWrap(config, 'apm:dns:lookup', lookup)
   }
@@ -36,7 +36,7 @@ dcSub('apm:dns:lookup', 'dns.lookup', {
   asyncEnd: ({ context, result }) => context.span.setTag('dns.address', result[0])
 })
 
-function createWrapLookupService (tracer, config) {
+function createWrapLookupService (config) {
   return function wrapLookupService (lookupService) {
     return dcWrap(config, 'apm:dns:lookup_service', lookupService)
   }
@@ -56,7 +56,7 @@ dcSub('apm:dns:lookup_service', 'dns.lookup_service', {
   }
 })
 
-function createWrapResolve (tracer, config) {
+function createWrapResolve (config) {
   return function wrapResolve (resolve) {
     return dcWrap(config, 'apm:dns:resolve', resolve)
   }
@@ -78,14 +78,14 @@ dcSub('apm:dns:resolve', 'dns.resolve', {
   }
 })
 
-function createWrapResolver (tracer, config, rrtype) {
+function createWrapResolver (config, rrtype) {
   return function wrapResolve (resolve) {
     config = Object.assign({}, config, { rrtype })
     return dcWrap(config, 'apm:dns:resolve', resolve)
   }
 }
 
-function createWrapReverse (tracer, config) {
+function createWrapReverse (config) {
   return function wrapReverse (reverse) {
     return dcWrap(config, 'apm:dns:reverse', reverse)
   }
@@ -123,21 +123,11 @@ function isArgsValid (args, minLength) {
   return true
 }
 
-function wrapArgs (span, args, callback) {
-  const original = args[args.length - 1]
-  const fn = tx.wrap(span, original)
-
-  args[args.length - 1] = function () {
-    callback && callback.apply(null, arguments)
-    return fn.apply(this, arguments)
-  }
-}
-
-function patchResolveShorthands (tracer, config, shim, prototype) {
+function patchResolveShorthands (config, shim, prototype) {
   Object.keys(rrtypes)
     .filter(method => !!prototype[method])
     .forEach(method => {
-      shim.wrap(prototype, method, createWrapResolver(tracer, config, rrtypes[method]))
+      shim.wrap(prototype, method, createWrapResolver(config, rrtypes[method]))
     })
 }
 
@@ -242,18 +232,18 @@ module.exports = [
   {
     name: 'dns',
     patch (dns, tracer, config) {
-      this.wrap(dns, 'lookup', createWrapLookup(tracer, config))
-      this.wrap(dns, 'lookupService', createWrapLookupService(tracer, config))
-      this.wrap(dns, 'resolve', createWrapResolve(tracer, config))
-      this.wrap(dns, 'reverse', createWrapReverse(tracer, config))
+      this.wrap(dns, 'lookup', createWrapLookup(config))
+      this.wrap(dns, 'lookupService', createWrapLookupService(config))
+      this.wrap(dns, 'resolve', createWrapResolve(config))
+      this.wrap(dns, 'reverse', createWrapReverse(config))
 
-      patchResolveShorthands(tracer, config, this, dns)
+      patchResolveShorthands(config, this, dns)
 
       if (dns.Resolver) {
-        this.wrap(dns.Resolver.prototype, 'resolve', createWrapResolve(tracer, config))
-        this.wrap(dns.Resolver.prototype, 'reverse', createWrapReverse(tracer, config))
+        this.wrap(dns.Resolver.prototype, 'resolve', createWrapResolve(config))
+        this.wrap(dns.Resolver.prototype, 'reverse', createWrapReverse(config))
 
-        patchResolveShorthands(tracer, config, this, dns.Resolver.prototype)
+        patchResolveShorthands(config, this, dns.Resolver.prototype)
       }
     },
     unpatch (dns) {
